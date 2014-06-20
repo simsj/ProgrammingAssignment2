@@ -6,7 +6,7 @@
 ## user's work environment. The purpose of creating the two fuctions is to efficiently 
 ## retrieve the inverse of a matrix by asking R to only calculate the inverse of 
 ## the matrix once, then retrieve the cached value of the inverse when needed multiple 
-## times. This is a technique to be used when the underlying matrix is not expected 
+## times later. This is a technique to be used when the underlying matrix is not expected 
 ## to change later in the code, and relies on lexical scoping rules of R.
 ##
 ## Evaluators, for clarity, please clear your Global Environment of variables, values 
@@ -33,50 +33,115 @@ y <- matrix(c(0, 2, 1, 0), nrow=2, ncol=2, byrow=TRUE)
 ##
 ## Please run the following lines of code to load the makeCacheMatrix function into your workspace:
 ##
-makeCacheMatrix <- function(x = matrix()) {  ## here, you will pass your matrix into the x argument
-}               
+makeCacheMatrix <- function(x = matrix()) {  ## here, you will pass your matrix y into the x argument
+        v <- NULL   ## in this function's environment, the variable v is assigned the value of NULL
+                    ## v is the variable that contains the inverse of the matrix or it is NULL
+                    ##
+        set <- function(y) { 
+                v <<- NULL    ## the variable v in the parent.environment is set to NULL
+                
+                x <<-  y      ## this sets the variable x in the parent.enviornment to the value y 
+                              ## which is passed into this function as a formal argument; in other words
+                              ## x is a copy of the original matrix y
+        }
+                              ##
+        get <- function() x   ## a function to fetch a copy of the y matrix passed into 
+                              ## makeCacheMatrix as a formal argument
+                              ##
+        setinverse <- function(solve) v <<- solve ## sets the variable v in the parent.enviornment 
+                                                  ## to the matrix inverse
+                              ##
+        getinverse <- function() v  ## a function to fetch the inverse of the matrix 
+                              ##
+        list(set = set, get = get, setinverse = setinverse, getinverse = getinverse) ## a list of four functions 
+                                                                                     ## and function variable names
+                                                                                     ## returned by the function 
+                                                                                     ## makeCacheMatrix
+}
 ##
-## The function cacheSolve(x) below, will return the inverse of a matrix by calculating 
-## the inverse of the matrix, which was first passed to the makeCacheMatrix() function. 
-## The first time cacheSolve() is called, the function asks R to calculate the inverse 
-## of the matrix using the solve() function, which is the single value 0.75. When calling 
-## the function again, the inverse of the maxtix is retrieved from the cache and a message
-## is printed "getting cached data" followed by the cached value 0.75.
+## Now call the makeCacheMatrix function on the matrix y and assign the function list, 
+## which is returned by the function to the variable theFunctionList by running the 
+## following line of code:
 ##
+theFunctionList <- makeCacheMatrix(y) 
+##
+##
+## If you wish to see the full list of functions and function names returned by makeCacheMatrix (optional here), you can 
+## ask R to print the list by running the following line of code:
+##
+theFunctionList
+##
+## the expected contents of theFunctionList should look something like this:
+# $set
+# function (y) 
+# {
+#         v <<- NULL
+#         x <<- y
+# }
+# <environment: 0x7fad31799030>
+#         
+#         $get
+# function () 
+#         x
+# <environment: 0x7fad31799030>
+#         
+#         $setinverse
+# function (solve) 
+#         v <<- solve
+# <environment: 0x7fad31799030>
+#         
+#         $getinverse
+# function () 
+#         v
+# <environment: 0x7fad31799030>
+##
+##
+## The function cacheSolve below will return the inverse of a matrix by calculating 
+## the inverse of the matrix which was first passed to the makeCacheMatrix() function. 
 ## Please run the following lines of code for the function cacheSolve, to load it into 
 ## your workspace.
 ##
-cacheSolve <- function(x, ...) { ## here, you will pass your list of functions returned by 
+cacheSolve <- function(x, ...) { ## here, you will pass the list of functions returned by 
                                  ## the makeCacheMatrix function as the argment x of this function
-        
-        ##  Return a matrix that is the inverse of matrix
+        v <- x$getinverse()      ## this calls the getinverse function
+                                 ##
+        if(!is.null(v)) {                
+                message("getting cached data")      ## this if statement returns the cached value of v if v is not NULL          
+                return(v)        }                  ## function execution halts here when v is not NULL
+                                ##
+        data <- x$get()         ## v was NULL; this calls the get fuction and assigns the matrix to the variable data 
+        v <- solve(data, ...)   ## this calculates the inverse of the matrix by calling solve() on the matrix in the 
+                                ## variable data 
+        x$setinverse(v)         ## this causes the setinverse function to be called on v    
+        v                       ## this function returns freshly calculated inverse of the matrix in the variable v, 
+                                ## having failed to find a non-NULL value for v in the above if.
 }
 ##
-## Please run the following line of code, which calls the function makeCacheMatrix on the matrix 
-## in your workspace:
-##
-theFunctionList <- makeCacheMatrix(y)  ## the variable theFunctionList in the user's workspace now contains 
-                                       ## a list of functions to be called later
+## The first time cacheSolve is called, the function asks R to calculate the inverse 
+## of the matrix using the solve() function. When calling the function again, the 
+## inverse of the maxtix is retrieved from the cache variable v and a message is printed 
+## "getting cached data" followed by the cached inverse matrix.
 ##
 ## Now run the following line of code in R.  It will return the value of the inverted matrix
 ##
-cacheSolve(theFunctionList)
+cacheSolve(theFunctionList)  ## we are passing the function list we got from makeCacheMatrix to the function cacheSolve
 ##
 ## The expected output of this example is the following:
 ##      [,1] [,2]
 ## [1,]  0.0    1
 ## [2,]  0.5    0
 ##
-## Now run the same line of code again, as shown here:
+## Now run the same statement again:
 ##
 cacheSolve(theFunctionList)
 ## 
-## this time the expected output is:
+## this time, the expected output is:
 ## getting cached data
 ##      [,1] [,2]
 ## [1,]  0.0    1
 ## [2,]  0.5    0
-
+##
+## Thanks for reading and for your evaluation!
 
 
 
